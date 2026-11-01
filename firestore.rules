@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /chatRooms/{roomId} {
+      function inThisRoom() {
+        return signedIn()
+          && request.auth.token.email in resource.data.participants;
+      }
+
+      allow read: if inThisRoom();
+      allow create: if signedIn()
+        && request.auth.token.email in request.resource.data.participants
+        && request.resource.data.participants.size() == 2;
+      allow update: if inThisRoom()
+        && request.resource.data.participants == resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        function parentRoom() {
+          return get(/databases/$(database)/documents/chatRooms/$(roomId)).data;
+        }
+        function inParentRoom() {
+          return signedIn()
+            && request.auth.token.email in parentRoom().participants;
+        }
+
+        allow read: if inParentRoom();
+        allow create: if inParentRoom()
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderEmail == request.auth.token.email
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() < 2000;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
