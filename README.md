@@ -195,10 +195,9 @@ const chatRoomId = [myEmail, theirEmail].sort().join("_");
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/ari-trinity/YOUR-REPO-NAME.git
+   git clone https://github.com/ari-trinity/SecureChat.git
    ```
 
-   > Replace **YOUR-REPO-NAME** with your actual repository name.
 
 2. **Navigate into the project folder**
 
